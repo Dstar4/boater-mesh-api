@@ -9,9 +9,8 @@ exports.up = function (knex) {
         .notNullable()
       t.string('password').notNullable()
       t.timestamps(true, true)
-      t.uuid('token')
       t.string('zip')
-      t.boolean('isAdmin')
+      t.boolean('isAdmin').defaultTo(false)
     })
     .createTable('gauges', t => {
       t.increments()

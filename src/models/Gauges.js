@@ -1,5 +1,6 @@
 const { Model } = require('objection')
 const knex = require('../data/db-config')
+const Connections = require('./Connections')
 
 Model.knex(knex)
 
@@ -7,9 +8,8 @@ class Gauges extends Model {
   static get tableName () {
     return 'gauges'
   }
-  static get relationMappings () {
-    const Connections = require('./Connections')
-    return {
+  static relationMappings = {
+    connections: {
       connections: Model.HasManyRelation,
       modelClass: Connections,
       join: {

@@ -2,10 +2,17 @@ const router = require('express').Router()
 require('dotenv').config()
 const axios = require('axios')
 const Gauges = require('../../models/Gauges')
+const Connections = require('../../models/Connections')
+const Users = require('../../models/Users')
 const chalk = require('chalk')
-const protectedRoute=require('../../middleware/protectedRoute')
+const protectedRoute = require('../../middleware/protectedRoute')
+const jwt = require('jsonwebtoken')
 router.use(protectedRoute())
-router.route('/').get(async (req, res) => {
+
+/* ---------------------------- Route Controllers --------------------------- */
+
+// GET /gauges/
+router.get('/', async (req, res) => {
   const url = `http://waterservices.usgs.gov/nwis/iv/?format=json&sites=${NC_SITES}&siteType=ST&variable=00060`
   try {
     const { data } = await axios.get(url)
@@ -29,6 +36,42 @@ router.route('/').get(async (req, res) => {
   }
 })
 
+// POST /gauges/save/:id
+router.post('/save/:id', async (req, res) => {
+  try {
+    let userId = req.session.userId
+    const data = await Connections.query().insert({
+      masterId: userId,
+      slaveId: req.params.id
+    })
+    if (data) {
+      res.status(201).json('Gauge Saved')
+    }
+  } catch (err) {
+    res.status(500).json('Unable to save that gauge')
+  }
+})
+
+// get /gauges/save
+router.get('/myGauges', async (req, res) => {
+  try {
+    let userId = req.session.userId
+    const gauges = await Connections.query()
+      .joinRelated('gauges')
+      .select('gauges.*', 'connections.*')
+      .where({ masterId: userId })
+    if (gauges) {
+      res.status(200).json(gauges)
+    }
+  } catch (err) {
+    console.log(err)
+
+    res.status(500).json(err)
+  }
+})
+
+/* --------------------------------- HELPERS -------------------------------- */
+
 async function save (gauge) {
   const item = {
     name: gauge.siteName,
@@ -41,11 +84,12 @@ async function save (gauge) {
   const data = Gauges.query()
     .insert(item)
     .catch(err => {
-      console.log(chalk.red(err.message))
+      // console.log(chalk.red(err.message))
     })
 
   return data
 }
+
 module.exports = router
 
 const NC_SITES = [

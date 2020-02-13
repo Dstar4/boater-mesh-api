@@ -25,6 +25,7 @@ router.post('/sign-up', async (req, res) => {
     })
     console.log('data', data)
     const token = generateAccessToken(data)
+    req.session.userId = data.id
     res.status(200).json(token)
   } catch (err) {
     if (err instanceof ValidationError) {
@@ -47,11 +48,11 @@ router.post('/sign-in', async (req, res) => {
       .where({ email: email })
       .first()
 
-
-      console.log('data', data)
-      const isEqual = await bcrypt.compare(password, data.password)
-      if (isEqual) {
-        const token = generateAccessToken(data)
+    console.log('data', data)
+    const isEqual = await bcrypt.compare(password, data.password)
+    if (isEqual) {
+      const token = generateAccessToken(data)
+      req.session.userId = data.id
       res.status(200).json(token)
     } else {
       res.status(400).json('Incorrect Password')
